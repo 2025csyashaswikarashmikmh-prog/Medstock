@@ -2,12 +2,10 @@
 
 FastAPI + SQLite + plain HTML/JS. Works on one shop PC; other devices on the same Wi-Fi can open it too.
 
-## Run it
+## To run:
 - **Windows:** double-click `run.bat`  •  **Mac/Linux:** `./run.sh`
 - Open <http://localhost:8000>. Other devices: `http://<shop-pc-ip>:8000`.
 - First logins: **admin / admin123** (owner) and **staff / staff123** (staff). **Change both in Settings first.**
-- Your old `medstock.db` works: copy it into `backend/` and the new columns are added automatically.
-- Optional demo data for presentations: `cd backend && python seed_demo.py` (adds fake sales – never on a real shop DB).
 
 ## What's inside
 | Area | What it does |
