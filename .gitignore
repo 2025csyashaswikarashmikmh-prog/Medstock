@@ -1,0 +1,6 @@
+backend/.env
+backend/medstock.db
+backup/
+__pycache__/
+*.pyc
+.venv/

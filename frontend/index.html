@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>MedStock Pharmacy</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ============================ LOGIN ============================ -->
+  <div id="loginScreen" class="login hidden">
+    <form id="loginForm" class="login-box" autocomplete="on">
+      <div class="cross big">✚</div>
+      <h1>MedStock Pharmacy</h1>
+      <p class="sub dark">Sign in to continue</p>
+      <input id="loginUser" placeholder="Username" autocomplete="username" required />
+      <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password" required />
+      <button type="submit">Sign in</button>
+      <p id="loginError" class="error"></p>
+    </form>
+  </div>
+
+  <!-- ============================== APP ============================== -->
+  <main id="app" class="hidden">
+    <header class="banner">
+      <div class="cross">✚</div>
+      <div class="grow">
+        <h1 id="shopTitle">MedStock Pharmacy</h1>
+        <p class="sub">Billing, stock &amp; expiry for medical shops</p>
+      </div>
+      <div class="who">
+        <span id="whoami"></span>
+        <button id="logoutBtn" class="ghost">Log out</button>
+      </div>
+    </header>
+
+    <div id="pwWarning" class="warn hidden">
+      You are using a default password. Open <b>Settings</b> and change it before real use.
+    </div>
+
+    <nav id="tabs" class="tabs">
+      <button data-view="dashboard">Dashboard</button>
+      <button data-view="billing">Billing</button>
+      <button data-view="inventory">Inventory</button>
+      <button data-view="purchases" data-role="owner">Suppliers &amp; Purchases</button>
+      <button data-view="reports" data-role="owner">Reports</button>
+      <button data-view="returns" data-role="owner">Return to supplier</button>
+      <button data-view="refills">Refill reminders</button>
+      <button data-view="schedh">Schedule H</button>
+      <button data-view="assistant">AI assistant</button>
+      <button data-view="settings">Settings</button>
+    </nav>
+
+    <p id="toast" class="toast hidden" role="status"></p>
+
+    <!-- ----------------------------- DASHBOARD ----------------------------- -->
+    <section id="view-dashboard" class="view">
+      <section class="cards" id="cards"></section>
+      <div id="costWarn" class="warn hidden"></div>
+      <div class="grid2">
+        <div class="panel"><h2>Sales – last 30 days</h2><div class="chart"><canvas id="chSales"></canvas></div></div>
+        <div class="panel"><h2>Expiry timeline (stock value)</h2><div class="chart"><canvas id="chExpiry"></canvas></div></div>
+        <div class="panel"><h2>Stock by category</h2><div class="chart"><canvas id="chCat"></canvas></div></div>
+        <div class="panel"><h2>Top sellers (30 days)</h2><div id="topList"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="panel"><h2>Smart reorder suggestions</h2><div id="reorderList"></div></div>
+        <div class="panel">
+          <h2>Daily alert</h2>
+          <pre id="alertText" class="alert-text"></pre>
+          <div class="row">
+            <a id="waLink" class="btn" target="_blank" rel="noopener">Share on WhatsApp</a>
+            <button id="sendAlertBtn" data-role="owner">E-mail this alert</button>
+          </div>
+          <p id="alertNote" class="muted"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------ BILLING ------------------------------ -->
+    <section id="view-billing" class="view hidden">
+      <div class="grid2 billing">
+        <div class="panel">
+          <h2>Scan or search medicine</h2>
+          <div class="row">
+            <input id="scanInput" class="grow" placeholder="Scan barcode (USB scanner) or type a medicine name, then Enter" autocomplete="off" />
+            <button id="scanBtn">Find</button>
+            <button id="camBtn" class="ghost hidden" title="Use the phone / webcam camera">📷 Camera</button>
+          </div>
+          <video id="camVideo" class="hidden" playsinline muted></video>
+          <div id="scanResults" class="results"></div>
+        </div>
+        <div class="panel">
+          <h2>Customer</h2>
+          <div class="form">
+            <input id="custName" placeholder="Customer / patient name" class="wide" />
+            <input id="custPhone" placeholder="Phone" inputmode="tel" />
+            <input id="doctorName" placeholder="Doctor name" />
+            <select id="payMode"><option>Cash</option><option>UPI</option><option>Card</option><option>Credit</option></select>
+            <input id="discount" type="number" min="0" max="100" step="0.5" placeholder="Discount %" />
+          </div>
+          <div id="schHFields" class="form hidden">
+            <input id="doctorReg" placeholder="Doctor registration no." />
+            <input id="patientAddr" class="wide" placeholder="Patient address" />
+            <p class="muted full">A Schedule H medicine is in the bill – patient name and doctor name are required.</p>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="head"><h2>Current bill</h2><button id="clearCart" class="ghost">Clear</button></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Medicine</th><th>MRP</th><th>GST %</th><th>Qty</th><th>Amount</th><th></th></tr></thead>
+          <tbody id="cartRows"></tbody>
+        </table></div>
+        <div class="totals">
+          <div>Taxable <b id="tTaxable">₹0.00</b></div>
+          <div>CGST <b id="tCgst">₹0.00</b></div>
+          <div>SGST <b id="tSgst">₹0.00</b></div>
+          <div class="grand">Total <b id="tTotal">₹0</b></div>
+        </div>
+        <p class="muted">MRP includes GST. The earliest-expiry batch is picked automatically (FEFO).</p>
+        <button id="makeBill" class="big-btn">Generate bill &amp; PDF invoice</button>
+      </div>
+      <div class="panel">
+        <h2>Recent bills</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Bill</th><th>Date</th><th>Customer</th><th>Payment</th><th>Total</th><th></th></tr></thead>
+          <tbody id="billRows"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ----------------------------- INVENTORY ----------------------------- -->
+    <section id="view-inventory" class="view hidden">
+      <section class="panel" data-role="owner">
+        <h2 id="medFormTitle">Add stock</h2>
+        <div class="form" id="medForm">
+          <input id="name" placeholder="Medicine name" class="wide" />
+          <input id="batch" placeholder="Batch no." />
+          <input id="quantity" type="number" min="0" placeholder="Quantity" />
+          <input id="price" type="number" min="0" step="0.01" placeholder="MRP / unit (₹, incl. GST)" />
+          <input id="costPrice" type="number" min="0" step="0.01" placeholder="Cost / unit (₹, excl. GST)" />
+          <select id="gstRate" title="GST rate">
+            <option value="0">GST 0%</option><option value="5">GST 5%</option>
+            <option value="12" selected>GST 12%</option><option value="18">GST 18%</option><option value="28">GST 28%</option>
+          </select>
+          <input id="expiry" type="date" title="Expiry date" />
+          <input id="barcode" placeholder="Barcode (scan here)" />
+          <input id="generic" placeholder="Generic / salt (for substitutes)" />
+          <input id="category" placeholder="Category" list="catList" />
+          <datalist id="catList"><option>Fever &amp; Pain</option><option>Antibiotic</option><option>Allergy</option><option>Diabetes</option><option>Blood Pressure</option><option>Nutrition</option><option>General</option></datalist>
+          <label class="check"><input id="schedH" type="checkbox" /> Schedule H</label>
+          <button id="addBtn">Add</button>
+          <button id="cancelEdit" class="ghost hidden">Cancel edit</button>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="head">
+          <h2>Inventory</h2>
+          <div class="row">
+            <input id="invSearch" placeholder="Search…" />
+            <select id="filter">
+              <option value="all">All</option><option value="expired">Expired</option>
+              <option value="expiring">Expiring soon</option><option value="low">Low stock</option>
+            </select>
+            <button class="ghost" id="expInvXlsx">Excel</button>
+            <button class="ghost" id="expInvPdf">PDF</button>
+          </div>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Medicine</th><th>Batch</th><th>Qty</th><th>MRP</th><th>GST %</th><th class="owner-col">Cost</th><th>Expiry</th><th>Status</th><th></th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table></div>
+      </section>
+    </section>
+
+    <!-- ------------------------ SUPPLIERS & PURCHASES ------------------------ -->
+    <section id="view-purchases" class="view hidden">
+      <div class="grid2">
+        <div class="panel">
+          <h2>Add supplier</h2>
+          <div class="form">
+            <input id="supName" placeholder="Supplier name" class="wide" />
+            <input id="supPhone" placeholder="Phone" />
+            <input id="supGstin" placeholder="GSTIN" />
+            <button id="addSupplier">Add supplier</button>
+          </div>
+        </div>
+        <div class="panel"><h2>What you owe</h2><div id="supList"></div></div>
+      </div>
+      <div class="panel">
+        <div class="head">
+          <h2>Purchase entry (stock received)</h2>
+          <label class="btn ghost-label">📄 Fill from supplier bill photo
+            <input id="billPhoto" type="file" accept="image/*" class="hidden" />
+          </label>
+        </div>
+        <div class="form">
+          <select id="purSupplier"></select>
+          <input id="purInvoice" placeholder="Supplier invoice no." />
+          <input id="purPaid" type="number" min="0" step="0.01" placeholder="Paid now (₹)" />
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Medicine</th><th>Batch</th><th>Expiry</th><th>Qty</th><th>Cost (ex-GST)</th><th>MRP</th><th>GST %</th><th></th></tr></thead>
+          <tbody id="purRows"></tbody>
+        </table></div>
+        <div class="row">
+          <button id="addPurRow" class="ghost">+ Add line</button>
+          <button id="savePurchase">Save purchase &amp; add to stock</button>
+        </div>
+        <p id="photoNote" class="muted"></p>
+      </div>
+      <div class="panel"><h2>Recent purchases</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Supplier</th><th>Invoice</th><th>Total</th></tr></thead>
+          <tbody id="purHistory"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ------------------------------- REPORTS ------------------------------- -->
+    <section id="view-reports" class="view hidden">
+      <div class="panel">
+        <div class="head">
+          <h2>Sales &amp; profit</h2>
+          <div class="row">
+            <select id="repPeriod"><option value="day">Daily (30 days)</option><option value="month">Monthly</option></select>
+            <button class="ghost" id="expSales">Export Excel</button>
+          </div>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Period</th><th>Bills</th><th>Sales</th><th>Profit</th></tr></thead>
+          <tbody id="repRows"></tbody>
+        </table></div>
+        <p class="muted">Profit = taxable value − cost price × quantity (cost entered excluding GST).</p>
+      </div>
+      <div class="grid2">
+        <div class="panel"><h2>Top-selling medicines (30 days)</h2>
+          <div class="table-wrap"><table><thead><tr><th>Medicine</th><th>Units</th><th>Revenue</th><th>Profit</th></tr></thead><tbody id="topRows"></tbody></table></div></div>
+        <div class="panel"><h2>GST collected – this month</h2>
+          <div class="table-wrap"><table><thead><tr><th>Rate</th><th>Taxable</th><th>CGST</th><th>SGST</th></tr></thead><tbody id="gstRows"></tbody></table></div></div>
+      </div>
+    </section>
+
+    <!-- ------------------------------- RETURNS ------------------------------- -->
+    <section id="view-returns" class="view hidden">
+      <div class="panel">
+        <div class="head">
+          <h2>Return-to-supplier list</h2>
+          <div class="row">
+            <select id="retDays"><option value="30">Within 30 days</option><option value="60">Within 60 days</option><option value="90" selected>Within 90 days</option><option value="180">Within 180 days</option></select>
+            <button id="retPdf">Print / PDF</button>
+            <button class="ghost" id="retXlsx">Excel</button>
+          </div>
+        </div>
+        <p class="muted">Expired and soon-to-expire stock grouped by supplier. Not every supplier accepts every batch – check their return policy.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Supplier</th><th>Medicine</th><th>Batch</th><th>Expiry</th><th>Qty</th><th>Value (cost)</th><th>Status</th></tr></thead>
+          <tbody id="retRows"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ------------------------------- REFILLS ------------------------------- -->
+    <section id="view-refills" class="view hidden">
+      <div class="panel">
+        <h2>Add refill reminder</h2>
+        <div class="form">
+          <input id="rfName" placeholder="Customer name" class="wide" />
+          <input id="rfPhone" placeholder="WhatsApp / phone" inputmode="tel" />
+          <input id="rfMed" placeholder="Medicine (e.g. Metformin 500mg)" class="wide" />
+          <input id="rfDays" type="number" min="1" value="30" title="Repeat every N days" />
+          <input id="rfLast" type="date" title="Last purchase date (blank = today)" />
+          <button id="addRefill">Add</button>
+        </div>
+      </div>
+      <div class="panel"><h2>Upcoming refills</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Customer</th><th>Medicine</th><th>Every</th><th>Next due</th><th>Status</th><th></th></tr></thead>
+          <tbody id="rfRows"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ----------------------------- SCHEDULE H ----------------------------- -->
+    <section id="view-schedh" class="view hidden">
+      <div class="panel">
+        <div class="head"><h2>Schedule H register</h2>
+          <div class="row"><button class="ghost" id="schXlsx">Excel</button><button id="schPdf">Print / PDF</button></div></div>
+        <p class="muted">Filled automatically whenever a Schedule H medicine is billed. Ask your pharmacist / drug inspector which extra columns your state requires.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Patient</th><th>Doctor</th><th>Reg. no.</th><th>Medicine</th><th>Batch</th><th>Qty</th></tr></thead>
+          <tbody id="schRows"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ------------------------------ ASSISTANT ------------------------------ -->
+    <section id="view-assistant" class="view hidden">
+      <div class="panel">
+        <h2>Ask MedStock</h2>
+        <div class="row">
+          <input id="askInput" class="grow" placeholder="e.g. which medicines expire next month?" />
+          <button id="askBtn">Ask</button>
+        </div>
+        <div class="chips" id="askChips"></div>
+        <pre id="askAnswer" class="alert-text"></pre>
+        <div class="table-wrap"><table><thead id="askHead"></thead><tbody id="askRows"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- ------------------------------ SETTINGS ------------------------------ -->
+    <section id="view-settings" class="view hidden">
+      <div class="panel" data-role="owner">
+        <h2>Shop details (printed on invoices)</h2>
+        <div class="form">
+          <input id="setName" class="wide" placeholder="Shop name" />
+          <input id="setAddr" class="wide" placeholder="Address" />
+          <input id="setPhone" placeholder="Phone" />
+          <input id="setGstin" placeholder="GSTIN" />
+          <input id="setDl" placeholder="Drug licence no." />
+          <input id="setFooter" class="wide" placeholder="Invoice footer" />
+          <button id="saveSettings">Save</button>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <h2>Change my password</h2>
+          <div class="form">
+            <input id="pwOld" type="password" placeholder="Current password" autocomplete="current-password" />
+            <input id="pwNew" type="password" placeholder="New password (min 6)" autocomplete="new-password" />
+            <button id="changePw">Change</button>
+          </div>
+        </div>
+        <div class="panel" data-role="owner">
+          <h2>Users</h2>
+          <div id="userList"></div>
+          <div class="form">
+            <input id="nuName" placeholder="Username" />
+            <input id="nuFull" placeholder="Full name" />
+            <input id="nuPass" type="password" placeholder="Password (min 6)" autocomplete="new-password" />
+            <select id="nuRole"><option value="staff">Staff</option><option value="owner">Owner</option></select>
+            <button id="addUser">Add user</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="vendor/chart.umd.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

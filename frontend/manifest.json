@@ -1,0 +1,13 @@
+{
+  "name": "MedStock Pharmacy",
+  "short_name": "MedStock",
+  "description": "Billing, stock and expiry management for medical shops",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ecfdf5",
+  "theme_color": "#0f766e",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
