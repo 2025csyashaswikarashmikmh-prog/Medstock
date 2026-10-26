@@ -29,8 +29,3 @@ FastAPI + SQLite + plain HTML/JS. Works on one shop PC; other devices on the sam
 | Export / PWA | Excel + PDF exports; installable on phone/PC ("Install app" in the browser). |
 | Backup | `python backend/backup.py` → `backup/medstock-DATE.db` (keeps 30). Schedule it daily. |
 
-## Before using in a real shop
-1. Ask a pharmacist exactly which columns your state's **Schedule H register** needs, and check invoice wording with a CA (GST).
-2. Enter **cost prices** (excluding GST) – profit is only right when they're filled in.
-3. Put it behind HTTPS if hosted online (Render/Railway); switch to PostgreSQL if many devices write at once.
-4. `ANTHROPIC_API_KEY` and SMTP passwords go in `backend/.env` only – never commit it (`.gitignore` already skips it).
